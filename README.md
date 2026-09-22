@@ -11,7 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/MagerlinC/markdown-office/main/inst
 This will:
 1. Check for `pandoc` and `typst`, offering to install them if missing
 2. Download the latest `mdo` binary for your platform
-3. Install it to `/usr/local/bin`
+3. Install it to `~/.local/bin`
 
 ### From source (for development)
 
@@ -30,29 +30,35 @@ deno task compile
 ## Usage
 
 ```bash
-mdo pdf <file-or-dir> [options]
-mdo update
-mdo --version
+mdo pdf <file-or-dir> [options]    # convert markdown to PDF
+mdo init [--global]                # scaffold config and sample files
+mdo update                         # update to the latest version
+mdo --version                      # print version
 ```
 
-### Options
+### PDF options
 
 | Flag | Description |
 |---|---|
-| `--watch`, `-w` | Re-render automatically on file changes |
+| `--watch`, `-w` | Re-render on file changes and open the PDF |
+| `--open` | Open the PDF after rendering |
 | `--output`, `-o` | Output PDF path (default: `<input>.pdf`) |
 | `--root` | Document root for mdo-config.json and logo (default: cwd) |
-| `--version`, `-v` | Print version |
+
+When given a directory, `mdo pdf` merges all `.md` files in that directory (sorted alphabetically) into a single PDF.
 
 ### Examples
 
 ```bash
-mdo pdf report.md
-mdo pdf report.md --watch
-mdo pdf report.md --output build/report.pdf
-mdo pdf reports/                          # builds all .md files in directory
-mdo pdf report.md --root /path/to/repo    # use config from another directory
-mdo update                                # update to the latest release
+mdo init                              # create mdo-config.json in current dir
+mdo init --global                     # create global config in ~/.config/mdo/
+mdo pdf report.md                     # render a single file
+mdo pdf report.md --open              # render and open the PDF
+mdo pdf report.md --watch             # render, open, and re-render on changes
+mdo pdf report.md --output build/out.pdf
+mdo pdf reports/                      # merge all .md files in dir into one PDF
+mdo pdf report.md --root /path/to/repo
+mdo update                            # update to the latest release
 ```
 
 ## Configuration
@@ -67,17 +73,17 @@ The first match wins. `mdo` prints which config file it's using on each run.
 To set up a global default (used when no project-level config exists):
 
 ```bash
-mkdir -p ~/.config/mdo
-# Copy your mdo-config.json and logo into ~/.config/mdo/
+mdo init --global
+# Then add a logo.png or logo.svg to ~/.config/mdo/
 ```
 
 ### mdo-config.json
 
 ```json
 {
-  "company_name_prefix": "Pine",
-  "company_name_highlight": "Grove AI",
-  "brand_color": "#257E34",
+  "company_name_prefix": "Your",
+  "company_name_highlight": "Company",
+  "brand_color": "#2563EB",
   "confidentiality_label": "Confidential"
 }
 ```

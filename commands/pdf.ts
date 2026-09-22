@@ -1,9 +1,20 @@
+import { resolve } from "jsr:@std/path";
 import { renderPdf } from "../lib/render.ts";
+
+/** Open a file with the system default application. */
+async function openFile(path: string): Promise<void> {
+  const abs = resolve(path);
+  const cmd = Deno.build.os === "darwin"
+    ? new Deno.Command("open", { args: [abs] })
+    : new Deno.Command("xdg-open", { args: [abs] });
+  await cmd.output();
+}
 
 export interface PdfArgs {
   input: string;
   output?: string;
   watch: boolean;
+  open: boolean;
   rootDir: string;
 }
 
@@ -18,6 +29,10 @@ export async function pdfCommand(args: PdfArgs): Promise<void> {
   console.log(
     `Generated: ${result.outputPath} (from ${result.sourceCount} source file(s))`,
   );
+
+  if (args.open || args.watch) {
+    await openFile(result.outputPath);
+  }
 
   if (!args.watch) return;
 
