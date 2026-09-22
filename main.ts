@@ -1,5 +1,6 @@
 import { resolve } from "jsr:@std/path";
 import { pdfCommand } from "./commands/pdf.ts";
+import { slidesCommand } from "./commands/slides.ts";
 import { initCommand } from "./commands/init.ts";
 import { updateCommand } from "./lib/update.ts";
 import { version } from "./lib/version.ts";
@@ -9,10 +10,11 @@ function printUsage(): void {
 
 Usage:
   mdo pdf <file-or-dir> [options]    Convert markdown to PDF
+  mdo slides <file-or-dir> [options] Convert markdown to HTML slides
   mdo init [--global]                Create mdo-config.json and sample files
   mdo update                         Update to the latest version
 
-PDF options:
+Options (pdf & slides):
   --watch, -w      Re-render on file changes and open PDF
   --open           Open PDF after rendering
   --output, -o     Output PDF path (default: <input>.pdf)
@@ -28,7 +30,9 @@ Examples:
   mdo pdf report.md
   mdo pdf report.md --watch
   mdo pdf report.md --open
-  mdo pdf reports/ --output out.pdf`);
+  mdo pdf reports/ --output out.pdf
+  mdo slides deck.md --open
+  mdo slides deck.md --watch`);
 }
 
 function parseArgs(args: string[]): void {
@@ -55,7 +59,7 @@ function parseArgs(args: string[]): void {
     return;
   }
 
-  if (command === "pdf") {
+  if (command === "pdf" || command === "slides") {
     const rest = args.slice(1);
     let input: string | undefined;
     let output: string | undefined;
@@ -90,12 +94,16 @@ function parseArgs(args: string[]): void {
     }
 
     if (!input) {
-      console.error("Error: pdf command requires an input file or directory");
+      console.error(`Error: ${command} command requires an input file or directory`);
       printUsage();
       Deno.exit(1);
     }
 
-    pdfCommand({ input, output, watch, open, rootDir });
+    if (command === "pdf") {
+      pdfCommand({ input, output, watch, open, rootDir });
+    } else {
+      slidesCommand({ input, output, watch, open, rootDir });
+    }
   } else {
     console.error(`Unknown command: ${command}`);
     printUsage();
