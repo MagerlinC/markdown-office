@@ -86,24 +86,14 @@ export async function updateCommand(): Promise<void> {
 
   // Write to a temp file next to the binary, then rename (atomic-ish)
   const tmpPath = `${currentBinary}.update`;
-  await Deno.writeFile(tmpPath, binary, { mode: 0o755 });
-
   try {
+    await Deno.writeFile(tmpPath, binary, { mode: 0o755 });
     await Deno.rename(tmpPath, currentBinary);
-  } catch {
-    // Rename may fail across filesystems or without permissions — try sudo mv
-    console.log("Needs elevated permissions to replace binary...");
-    const cmd = new Deno.Command("sudo", {
-      args: ["mv", tmpPath, currentBinary],
-      stdin: "inherit",
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    const result = await cmd.output();
-    if (!result.success) {
-      console.error("Failed to replace binary. Try running with sudo.");
-      Deno.exit(1);
-    }
+  } catch (err) {
+    // Clean up temp file on failure
+    await Deno.remove(tmpPath).catch(() => {});
+    console.error(`Failed to replace binary at ${currentBinary}: ${err}`);
+    Deno.exit(1);
   }
 
   console.log(`Updated to ${latest}.`);

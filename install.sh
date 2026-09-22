@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="MagerlinC/markdown-office"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="${HOME}/.local/bin"
 BINARY_NAME="mdo"
 
 # ── Helpers ────────────────────────────────────────────────────────────
@@ -133,15 +133,27 @@ chmod +x "$TMP_DIR/$BINARY_NAME"
 
 # ── Install ────────────────────────────────────────────────────────────
 
+mkdir -p "$INSTALL_DIR"
+
 echo ""
 echo "Installing to $INSTALL_DIR/$BINARY_NAME..."
 
-if [ -w "$INSTALL_DIR" ]; then
-  mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
-else
-  sudo mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
-fi
+mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
 
-ok "installed: $(command -v $BINARY_NAME)"
+ok "installed: $INSTALL_DIR/$BINARY_NAME"
+
+# Check if INSTALL_DIR is on PATH
+case ":$PATH:" in
+  *":$INSTALL_DIR:"*) ;;
+  *)
+    warn "$INSTALL_DIR is not on your PATH"
+    echo ""
+    echo "  Add it by appending this to your shell profile (~/.zshrc, ~/.bashrc, etc.):"
+    echo ""
+    echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo ""
+    ;;
+esac
+
 echo ""
 echo "Run 'mdo --help' to get started."
