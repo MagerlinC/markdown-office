@@ -35,12 +35,15 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Compile
+      - name: Inject version
         run: |
           VERSION="${GITHUB_REF_NAME}"
+          echo "export const version: string = \"${VERSION}\";" > lib/version.ts
+
+      - name: Compile
+        run: |
           deno compile \
             --allow-read --allow-write --allow-run --allow-net \
-            --define VERSION="\"${VERSION}\"" \
             --target ${{ matrix.target }} \
             --output ${{ matrix.artifact }} \
             main.ts
