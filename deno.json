@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "mdo": "deno run --allow-read --allow-write --allow-run --allow-net main.ts",
-    "compile": "deno compile --allow-read --allow-write --allow-run --allow-net --output mdo main.ts"
+    "mdo": "deno run -A main.ts",
+    "compile": "deno compile -A --output mdo main.ts"
   },
   "compilerOptions": {
     "strict": true

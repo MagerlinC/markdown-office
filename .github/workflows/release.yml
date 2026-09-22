@@ -42,8 +42,7 @@ jobs:
 
       - name: Compile
         run: |
-          deno compile \
-            --allow-read --allow-write --allow-run --allow-net \
+          deno compile -A \
             --target ${{ matrix.target }} \
             --output ${{ matrix.artifact }} \
             main.ts
