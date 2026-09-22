@@ -1,4 +1,36 @@
-# mdo — markdown document office
+<p align="center">
+  <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+    <!-- Back page (PDF) -->
+    <rect x="38" y="14" width="68" height="88" rx="6" fill="#2563EB" opacity="0.12" stroke="#2563EB" stroke-width="2"/>
+    <rect x="48" y="40" width="40" height="3" rx="1.5" fill="#2563EB" opacity="0.5"/>
+    <rect x="48" y="50" width="34" height="3" rx="1.5" fill="#2563EB" opacity="0.35"/>
+    <rect x="48" y="60" width="38" height="3" rx="1.5" fill="#2563EB" opacity="0.35"/>
+    <rect x="48" y="70" width="28" height="3" rx="1.5" fill="#2563EB" opacity="0.25"/>
+    <!-- Front page (Markdown) -->
+    <rect x="14" y="18" width="68" height="88" rx="6" fill="white" stroke="#334155" stroke-width="2"/>
+    <!-- MD hash symbol -->
+    <text x="30" y="52" font-family="monospace" font-weight="bold" font-size="22" fill="#334155">#</text>
+    <!-- MD content lines -->
+    <rect x="44" y="40" width="28" height="3.5" rx="1.5" fill="#334155" opacity="0.7"/>
+    <rect x="28" y="56" width="44" height="2.5" rx="1.25" fill="#94a3b8"/>
+    <rect x="28" y="64" width="38" height="2.5" rx="1.25" fill="#94a3b8"/>
+    <rect x="28" y="72" width="42" height="2.5" rx="1.25" fill="#94a3b8"/>
+    <rect x="28" y="80" width="30" height="2.5" rx="1.25" fill="#94a3b8"/>
+    <!-- Arrow -->
+    <path d="M62 94 L74 94" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M71 90 L76 94 L71 98" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Corner fold on front page -->
+    <path d="M70 18 L82 18 L82 30 Z" fill="#e2e8f0" stroke="#334155" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>
+</p>
+
+<h1 align="center">mdo</h1>
+<p align="center"><strong>Markdown Document Office</strong> — turn Markdown into branded PDFs from the terminal</p>
+<p align="center">
+  <code>pandoc</code> + <code>typst</code> under the hood · YAML front matter in, polished PDF out
+</p>
+
+---
 
 A CLI tool that converts Markdown files into branded PDFs using `pandoc` and `typst`. Documents only need a YAML front matter block with a title and subtitle — branding, logo, and styling are applied automatically.
 
