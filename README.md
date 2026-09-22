@@ -55,16 +55,21 @@ mdo pdf report.md --root /path/to/repo    # use config from another directory
 mdo update                                # update to the latest release
 ```
 
-## Document setup
+## Configuration
 
-### Required files in document root
+`mdo` looks for `mdo-config.json` and a logo file in the following order:
 
-A document root (the directory you run `mdo` from, or specify with `--root`) needs:
+1. **Project root** — the directory you run `mdo` from (or specify with `--root`)
+2. **Global config** — `~/.config/mdo/` (or `$XDG_CONFIG_HOME/mdo/`)
 
-| File | Purpose |
-|---|---|
-| `mdo-config.json` | Branding values (company name, colors, etc.) |
-| `logo.png` or `logo.svg` | Logo displayed on the frontpage |
+The first match wins. `mdo` prints which config file it's using on each run.
+
+To set up a global default (used when no project-level config exists):
+
+```bash
+mkdir -p ~/.config/mdo
+# Copy your mdo-config.json and logo into ~/.config/mdo/
+```
 
 ### mdo-config.json
 
@@ -78,6 +83,10 @@ A document root (the directory you run `mdo` from, or specify with `--root`) nee
 ```
 
 The company name is rendered as `<prefix><highlight>` with the highlight portion colored using `brand_color`.
+
+### Logo
+
+Place a `logo.png` or `logo.svg` alongside your `mdo-config.json` (project root or global config dir). `logo.png` takes priority over `logo.svg`.
 
 ### YAML front matter
 
@@ -123,7 +132,7 @@ Paths are relative to the including file. Includes are expanded recursively (up 
 | `frontpage.typ` | Frontpage layout with placeholder tokens |
 | `typst-header.typ` | Typst `#show` and `#set` rules for headings, lists, tables |
 
-**Resolution order:** document root first, then `cli/templates/` defaults. If a file exists in the document root, it takes priority over the bundled version.
+**Resolution order:** document root first, then the bundled defaults compiled into the binary. If a file exists in the document root, it takes priority.
 
 ### Frontpage placeholders
 

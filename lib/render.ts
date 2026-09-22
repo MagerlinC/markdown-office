@@ -3,13 +3,12 @@ import { loadConfig } from "./config.ts";
 import { extractFrontmatter } from "./frontmatter.ts";
 import { buildFrontpage } from "./frontpage.ts";
 import { expandIncludes } from "./includes.ts";
-import { resolveTemplate } from "./templates.ts";
+import { resolveTemplateToFile } from "./templates.ts";
 
 export interface RenderOptions {
   input: string;
   output?: string;
   rootDir: string;
-  cliDir: string;
 }
 
 export interface RenderResult {
@@ -20,7 +19,7 @@ export interface RenderResult {
 }
 
 export async function renderPdf(options: RenderOptions): Promise<RenderResult> {
-  const { rootDir, cliDir } = options;
+  const { rootDir } = options;
   const input = resolve(options.input);
 
   // ── Resolve input sources ───────────────────────────────────────────
@@ -52,14 +51,15 @@ export async function renderPdf(options: RenderOptions): Promise<RenderResult> {
   const outputPath = options.output ?? defaultOutput;
 
   // ── Load branding config ────────────────────────────────────────────
-  const config = await loadConfig(rootDir);
+  const { config, source: configSource } = await loadConfig(rootDir);
+  console.log(`Using config: ${configSource}`);
 
-  // ── Resolve templates ───────────────────────────────────────────────
-  const typstHeaderPath = await resolveTemplate("typst-header.typ", cliDir, rootDir);
-
-  // ── Expand includes ─────────────────────────────────────────────────
+  // ── Set up temp dir ───────────────────────────────────────────────
   const tmpDir = await Deno.makeTempDir();
   const watchFiles = [...sources];
+
+  // ── Resolve templates ───────────────────────────────────────────────
+  const typstHeaderPath = await resolveTemplateToFile("typst-header.typ", rootDir, tmpDir);
 
   try {
     const expandedPaths: string[] = [];
@@ -82,7 +82,7 @@ export async function renderPdf(options: RenderOptions): Promise<RenderResult> {
     const meta = extractFrontmatter(primaryContent);
 
     // ── Build frontpage ─────────────────────────────────────────────────
-    const frontpageContent = await buildFrontpage(cliDir, rootDir, config, meta);
+    const frontpageContent = await buildFrontpage(rootDir, config, meta);
     const frontpagePath = join(tmpDir, "frontpage.typ");
     await Deno.writeTextFile(frontpagePath, frontpageContent);
 

@@ -5,7 +5,6 @@ export interface PdfArgs {
   output?: string;
   watch: boolean;
   rootDir: string;
-  cliDir: string;
 }
 
 export async function pdfCommand(args: PdfArgs): Promise<void> {
@@ -14,7 +13,6 @@ export async function pdfCommand(args: PdfArgs): Promise<void> {
     input: args.input,
     output: args.output,
     rootDir: args.rootDir,
-    cliDir: args.cliDir,
   });
 
   console.log(
@@ -44,7 +42,6 @@ export async function pdfCommand(args: PdfArgs): Promise<void> {
           input: args.input,
           output: args.output,
           rootDir: args.rootDir,
-          cliDir: args.cliDir,
         });
         console.log(
           `Generated: ${r.outputPath} (from ${r.sourceCount} source file(s))`,

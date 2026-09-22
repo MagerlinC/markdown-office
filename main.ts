@@ -1,17 +1,7 @@
-import { dirname, fromFileUrl, resolve } from "jsr:@std/path";
+import { resolve } from "jsr:@std/path";
 import { pdfCommand } from "./commands/pdf.ts";
 import { updateCommand } from "./lib/update.ts";
 import { version } from "./lib/version.ts";
-
-/** Resolve the directory where the CLI source/binary lives. */
-function getCliDir(): string {
-  // import.meta.dirname works in both `deno run` and `deno compile`
-  if (import.meta.dirname) {
-    return import.meta.dirname;
-  }
-  // Fallback for older Deno versions
-  return dirname(fromFileUrl(import.meta.url));
-}
 
 function printUsage(): void {
   console.log(`mdo — markdown document office (${version})
@@ -57,7 +47,6 @@ function parseArgs(args: string[]): void {
     let output: string | undefined;
     let watch = false;
     let rootDir = Deno.cwd();
-    const cliDir = getCliDir();
 
     for (let i = 0; i < rest.length; i++) {
       const arg = rest[i];
@@ -89,7 +78,7 @@ function parseArgs(args: string[]): void {
       Deno.exit(1);
     }
 
-    pdfCommand({ input, output, watch, rootDir, cliDir });
+    pdfCommand({ input, output, watch, rootDir });
   } else {
     console.error(`Unknown command: ${command}`);
     printUsage();

@@ -1,24 +1,37 @@
-import { join, resolve } from "jsr:@std/path";
+import { join } from "jsr:@std/path";
 import type { BrandConfig } from "./config.ts";
 import type { DocMeta } from "./frontmatter.ts";
-import { resolveTemplate } from "./templates.ts";
+import { resolveTemplateContent } from "./templates.ts";
 
 const LOGO_NAMES = ["logo.png", "logo.svg"];
 
-/** Find the logo file in the document root. Returns an absolute path. */
+/** Platform-appropriate global config directory. */
+function globalConfigDir(): string {
+  if (Deno.build.os === "windows") {
+    return join(Deno.env.get("APPDATA") ?? join(Deno.env.get("USERPROFILE") ?? "", "AppData", "Roaming"), "mdo");
+  }
+  return join(Deno.env.get("XDG_CONFIG_HOME") ?? join(Deno.env.get("HOME") ?? "", ".config"), "mdo");
+}
+
+/**
+ * Find the logo file. Checks the project root first, then the global config dir.
+ * Returns an absolute path.
+ */
 async function findLogo(rootDir: string): Promise<string> {
-  for (const name of LOGO_NAMES) {
-    const path = join(rootDir, name);
-    try {
-      // Resolve the real path (follows symlinks) so typst can find it
-      const realPath = await Deno.realPath(path);
-      return realPath;
-    } catch {
-      // try next
+  const searchDirs = [rootDir, globalConfigDir()];
+  for (const dir of searchDirs) {
+    for (const name of LOGO_NAMES) {
+      const path = join(dir, name);
+      try {
+        const realPath = await Deno.realPath(path);
+        return realPath;
+      } catch {
+        // try next
+      }
     }
   }
   throw new Error(
-    `No logo file found in ${rootDir} (expected ${LOGO_NAMES.join(" or ")})`,
+    `No logo file found (expected ${LOGO_NAMES.join(" or ")} in ${searchDirs.join(" or ")})`,
   );
 }
 
@@ -27,13 +40,11 @@ async function findLogo(rootDir: string): Promise<string> {
  * with branding config and document metadata.
  */
 export async function buildFrontpage(
-  cliDir: string,
   rootDir: string,
   config: BrandConfig,
   meta: DocMeta,
 ): Promise<string> {
-  const templatePath = await resolveTemplate("frontpage.typ", cliDir, rootDir);
-  let template = await Deno.readTextFile(templatePath);
+  let template = await resolveTemplateContent("frontpage.typ", rootDir);
 
   const logoPath = await findLogo(rootDir);
 
