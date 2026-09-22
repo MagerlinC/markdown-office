@@ -42,10 +42,11 @@ deno task compile
 ## Usage
 
 ```bash
-mdo pdf <file-or-dir> [options]    # convert markdown to PDF
-mdo init [--global]                # scaffold config and sample files
-mdo update                         # update to the latest version
-mdo --version                      # print version
+mdo pdf <file-or-dir> [options]       # convert markdown to PDF
+mdo slides <file-or-dir> [options]    # convert markdown to HTML slides
+mdo init [--global]                   # scaffold config and sample files
+mdo update                            # update to the latest version
+mdo --version                         # print version
 ```
 
 ### PDF options
@@ -72,6 +73,77 @@ mdo pdf reports/                      # merge all .md files in dir into one PDF
 mdo pdf report.md --root /path/to/repo
 mdo update                            # update to the latest release
 ```
+
+## Slides
+
+`mdo slides` converts Markdown into a self-contained HTML slide deck with branding, keyboard/touch navigation, and a progress bar.
+
+### Slide options
+
+| Flag | Description |
+|---|---|
+| `--watch`, `-w` | Re-render on file changes and open the presentation |
+| `--open` | Open the presentation after rendering |
+| `--output`, `-o` | Output HTML path (default: `<input>.html`) |
+| `--root` | Document root for mdo-config.json and logo (default: cwd) |
+
+### Slide structure
+
+Slides are split at these boundaries in the converted HTML:
+
+- **`# Heading 1`** — starts a new section slide
+- **`## Heading 2`** — starts a sub-slide (the parent `# ` heading is shown as a section label)
+- **`---`** (horizontal rule) — explicit slide break within a section
+
+Content before the first `# ` heading is ignored — the title slide is generated automatically from the front matter and branding config.
+
+```markdown
+---
+doc-title: "Quarterly Review"
+doc-subtitle: "Q3 2026"
+---
+
+# Agenda
+- Revenue
+- Roadmap
+- Hiring
+
+# Revenue
+
+## Revenue — EMEA
+Regional breakdown here.
+
+---
+Follow-up notes on the same section.
+
+# Roadmap
+Upcoming milestones.
+```
+
+### Slide navigation
+
+| Input | Action |
+|---|---|
+| Right / Down / Space | Next slide |
+| Left / Up | Previous slide |
+| Home / End | First / last slide |
+| Click left half | Previous slide |
+| Click right half | Next slide |
+| Swipe left / right | Next / previous slide (touch) |
+| Ctrl+P | Print all slides |
+
+### Slide examples
+
+```bash
+mdo slides deck.md --open                     # render and open
+mdo slides deck.md --watch                    # live-reload while editing
+mdo slides presentations/                     # merge a directory of .md files
+mdo slides deck.md --output build/slides.html
+```
+
+### Slide template override
+
+Place a custom `slides.html` in your document root to override the built-in template. It supports the same `%%PLACEHOLDER%%` tokens as the PDF frontpage template, plus `%%SLIDES_HTML%%` for the generated slide content and `%%LOGO_HTML%%` for the logo `<img>` element.
 
 ## Configuration
 
