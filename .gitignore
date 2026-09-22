@@ -1,0 +1,5 @@
+# Compiled binary
+mdo
+
+# Deno cache (if using DENO_DIR locally)
+.deno/

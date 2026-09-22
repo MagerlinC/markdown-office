@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO="MagerlinC/markdown-office"
+INSTALL_DIR="/usr/local/bin"
+BINARY_NAME="mdo"
+
+# ── Helpers ────────────────────────────────────────────────────────────
+
+info()    { printf '  %s\n' "$*"; }
+ok()      { printf '  ✓ %s\n' "$*"; }
+warn()    { printf '  ! %s\n' "$*"; }
+fail()    { printf '  ✗ %s\n' "$*" >&2; exit 1; }
+
+confirm() {
+  printf '  %s [y/N] ' "$1"
+  read -r answer
+  case "$answer" in
+    [yY]|[yY][eE][sS]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# ── Detect platform ───────────────────────────────────────────────────
+
+detect_platform() {
+  local os arch
+  os="$(uname -s)"
+  arch="$(uname -m)"
+
+  case "$os" in
+    Linux)  os="linux" ;;
+    Darwin) os="darwin" ;;
+    *)      fail "Unsupported OS: $os" ;;
+  esac
+
+  case "$arch" in
+    x86_64|amd64)  arch="x86_64" ;;
+    arm64|aarch64) arch="aarch64" ;;
+    *)             fail "Unsupported architecture: $arch" ;;
+  esac
+
+  echo "${os}-${arch}"
+}
+
+# ── Detect package manager ────────────────────────────────────────────
+
+detect_pkg_manager() {
+  if command -v brew >/dev/null 2>&1; then
+    echo "brew"
+  elif command -v apt-get >/dev/null 2>&1; then
+    echo "apt"
+  elif command -v dnf >/dev/null 2>&1; then
+    echo "dnf"
+  elif command -v pacman >/dev/null 2>&1; then
+    echo "pacman"
+  else
+    echo "none"
+  fi
+}
+
+install_with_pkg_manager() {
+  local pkg="$1"
+  local mgr="$2"
+
+  case "$mgr" in
+    brew)   brew install "$pkg" ;;
+    apt)    sudo apt-get update -qq && sudo apt-get install -y "$pkg" ;;
+    dnf)    sudo dnf install -y "$pkg" ;;
+    pacman) sudo pacman -S --noconfirm "$pkg" ;;
+    *)      return 1 ;;
+  esac
+}
+
+# ── Check / install dependencies ──────────────────────────────────────
+
+PKG_MGR="$(detect_pkg_manager)"
+
+echo "Checking dependencies..."
+
+if command -v pandoc >/dev/null 2>&1; then
+  ok "pandoc $(pandoc --version | head -1 | awk '{print $2}')"
+else
+  warn "pandoc not found"
+  if [ "$PKG_MGR" != "none" ] && confirm "Install pandoc via $PKG_MGR?"; then
+    install_with_pkg_manager pandoc "$PKG_MGR"
+    ok "pandoc installed"
+  else
+    fail "pandoc is required. Install it manually: https://pandoc.org/installing.html"
+  fi
+fi
+
+if command -v typst >/dev/null 2>&1; then
+  ok "typst $(typst --version | awk '{print $2}')"
+else
+  warn "typst not found"
+  if [ "$PKG_MGR" = "brew" ] && confirm "Install typst via brew?"; then
+    brew install typst
+    ok "typst installed"
+  elif command -v cargo >/dev/null 2>&1 && confirm "Install typst via cargo?"; then
+    cargo install typst-cli
+    ok "typst installed"
+  else
+    fail "typst is required. Install it manually: https://github.com/typst/typst#installation"
+  fi
+fi
+
+# ── Download mdo ──────────────────────────────────────────────────────
+
+PLATFORM="$(detect_platform)"
+ARTIFACT="mdo-${PLATFORM}"
+
+echo ""
+echo "Downloading mdo for ${PLATFORM}..."
+
+# Get the download URL for the latest release
+DOWNLOAD_URL="$(
+  curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+    | grep "browser_download_url.*${ARTIFACT}" \
+    | head -1 \
+    | cut -d '"' -f 4
+)" || fail "Could not find a release for ${PLATFORM}. Check https://github.com/${REPO}/releases"
+
+if [ -z "$DOWNLOAD_URL" ]; then
+  fail "No binary found for ${PLATFORM} in the latest release"
+fi
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+curl -fsSL -o "$TMP_DIR/$BINARY_NAME" "$DOWNLOAD_URL"
+chmod +x "$TMP_DIR/$BINARY_NAME"
+
+# ── Install ────────────────────────────────────────────────────────────
+
+echo ""
+echo "Installing to $INSTALL_DIR/$BINARY_NAME..."
+
+if [ -w "$INSTALL_DIR" ]; then
+  mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
+else
+  sudo mv "$TMP_DIR/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
+fi
+
+ok "installed: $(command -v $BINARY_NAME)"
+echo ""
+echo "Run 'mdo --help' to get started."
