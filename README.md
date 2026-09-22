@@ -12,6 +12,8 @@
 
 A CLI tool that converts Markdown files into branded PDFs using `pandoc` and `typst`. Documents only need a YAML front matter block with a title and subtitle — branding, logo, and styling are applied automatically.
 
+Supports basic PDF generation as well as watch mode, letting you edit Markdown while seeing your changes live in PDF-form.
+
 ## Installation
 
 ```bash
