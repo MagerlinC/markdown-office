@@ -20,6 +20,8 @@ Options (pdf & slides):
   --open           Open the output after rendering
   --output, -o     Output path (default: <input>.pdf / <input>.html)
   --root           Document root for mdo-config.json and logo (default: cwd)
+  --pdf            (slides) Also print the deck to <output>.pdf, one slide
+                   per page (uses Chrome/Chromium; downloads one if needed)
 
 Global options:
   --version, -v    Print version
@@ -33,7 +35,8 @@ Examples:
   mdo pdf report.md --open
   mdo pdf reports/ --output out.pdf
   mdo slides deck.md --open
-  mdo slides deck.md --watch`);
+  mdo slides deck.md --watch
+  mdo slides deck.md --pdf`);
 }
 
 function parseArgs(args: string[]): void {
@@ -66,6 +69,7 @@ function parseArgs(args: string[]): void {
     let output: string | undefined;
     let watch = false;
     let open = false;
+    let pdf = false;
     let rootDir = Deno.cwd();
 
     for (let i = 0; i < rest.length; i++) {
@@ -74,6 +78,8 @@ function parseArgs(args: string[]): void {
         watch = true;
       } else if (arg === "--open") {
         open = true;
+      } else if (arg === "--pdf" && command === "slides") {
+        pdf = true;
       } else if (arg === "--output" || arg === "-o") {
         output = rest[++i];
         if (!output) {
@@ -103,7 +109,11 @@ function parseArgs(args: string[]): void {
     if (command === "pdf") {
       pdfCommand({ input, output, watch, open, rootDir });
     } else {
-      slidesCommand({ input, output, watch, open, rootDir });
+      if (pdf && watch) {
+        console.error("Error: --pdf can't be combined with --watch");
+        Deno.exit(1);
+      }
+      slidesCommand({ input, output, watch, open, pdf, rootDir });
     }
   } else {
     console.error(`Unknown command: ${command}`);

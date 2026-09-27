@@ -39,8 +39,10 @@ fi
 
 # ── Slides ──────────────────────────────────────────────────────────────
 echo "Slides"
-HTML="$OUT/README.html"
-if mdo slides README.md --output "$HTML" > "$OUT/slides.log" 2>&1; then
+# In a subfolder, so the slides PDF doesn't clash with the document PDF
+HTML="$OUT/slides/README.html"
+SLIDES_PDF="$OUT/slides/README.pdf"
+if mdo slides README.md --output "$HTML" --pdf > "$OUT/slides.log" 2>&1; then
   slides=$(grep -o '<section class="slide' "$HTML" | wc -l | tr -d ' ')
   if [ "$slides" -ge 10 ]; then ok "README.html has $slides slides"; else fail "only $slides slides in README.html"; fi
 
@@ -49,6 +51,16 @@ if mdo slides README.md --output "$HTML" > "$OUT/slides.log" 2>&1; then
   if grep -q '<script type="module">' "$HTML"; then ok "navigation script inlined"; else fail "navigation script missing"; fi
   if grep -qE '(src|href)="/_astro/' "$HTML"; then fail "references external /_astro/ assets"; else ok "self-contained (no /_astro/ assets)"; fi
   if grep -q 'Warning' "$OUT/slides.log"; then fail "warnings during build:"; grep Warning "$OUT/slides.log"; fi
+
+  # --pdf: one 16:9 page per slide
+  if [ "$(head -c 4 "$SLIDES_PDF" 2>/dev/null)" = "%PDF" ]; then
+    # Page objects are "/Type /Page" (not "/Pages"), often at the end of a line
+    pages=$( (grep -aoE '/Type ?/Page([^s]|$)' "$SLIDES_PDF" || true) | wc -l | tr -d ' ')
+    if [ "$pages" -eq "$slides" ]; then ok "slides PDF has one page per slide ($pages)"; else fail "slides PDF has $pages pages for $slides slides"; fi
+    if grep -aqE '/MediaBox ?\[ ?0 0 960 540 ?\]' "$SLIDES_PDF"; then ok "slides PDF pages are 16:9"; else fail "slides PDF pages aren't 16:9"; fi
+  else
+    fail "slides PDF missing or not a PDF"
+  fi
 else
   fail "mdo slides failed (see $OUT/slides.log)"; tail -5 "$OUT/slides.log"
 fi
@@ -57,6 +69,7 @@ if [ "$OPEN" = "--open" ]; then
   opener=$(command -v open || command -v xdg-open)
   "$opener" "$OUT/README.pdf"
   "$opener" "$HTML"
+  "$opener" "$SLIDES_PDF"
 fi
 
 echo

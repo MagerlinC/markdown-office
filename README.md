@@ -85,9 +85,22 @@ Slides need **Node.js (>= 18.17) and npm** in addition to pandoc. On first use, 
 | Flag | Description |
 |---|---|
 | `--watch`, `-w` | Serve the deck with the Astro dev server, open it, and live-reload on changes |
-| `--open` | Open the presentation after rendering |
+| `--open` | Open the presentation (or, with `--pdf`, the PDF) after rendering |
 | `--output`, `-o` | Output HTML path (default: `<input>.html`) |
+| `--pdf` | Also print the deck to a PDF next to the HTML (`<output>.pdf`). Can't be combined with `--watch` |
 | `--root` | Document root for mdo-config.json and logo (default: cwd) |
+
+### Slides as PDF
+
+`mdo slides deck.md --pdf` builds the HTML deck as usual, then prints it to `deck.pdf` in a headless browser: one 16:9 page per slide, showing each slide's final state. Every reveal step is visible, and `reveal-dismiss` blocks are left out because they collapse before the slide ends.
+
+Printing needs a Chromium-based browser. `mdo` uses, in order:
+
+1. `$MDO_BROWSER`, if set, as the path to a Chrome/Chromium executable
+2. an installed Google Chrome, Chromium, Microsoft Edge or Brave
+3. Google's `chrome-headless-shell`, downloaded once into `~/.cache/mdo/browsers/` (via `npx @puppeteer/browsers`, so it works on CI and servers without a desktop browser)
+
+The deck loads its fonts from Google Fonts, so print while online to get the right fonts.
 
 ### Slide structure
 
@@ -186,13 +199,14 @@ The title slide takes these front matter fields in addition to `doc-title` and `
 | Left / Up | Hide the last revealed step, then go to the previous slide |
 | Scroll | Move between slides |
 | `?noReveal=true` in the URL | Show every step at once |
-| Ctrl+P | Print one slide per page, with all steps shown |
+| Ctrl+P | Print one 16:9 slide per page, as with `--pdf` |
 
 ### Slide examples
 
 ```bash
 mdo slides deck.md --open                     # render and open
 mdo slides deck.md --watch                    # live-reload dev server while editing
+mdo slides deck.md --pdf                      # also print deck.pdf, one slide per page
 mdo slides presentations/                     # merge a directory of .md files
 mdo slides deck.md --output build/slides.html
 ```

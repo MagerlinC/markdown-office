@@ -84,6 +84,24 @@ async function pandoc(args: string[], input: string): Promise<string> {
   return new TextDecoder().decode(stdout);
 }
 
+let noHighlight: Promise<string> | null = null;
+
+/**
+ * The option that turns off syntax highlighting: `--syntax-highlighting=none`
+ * in newer pandoc; older pandoc (e.g. from apt on Linux) only knows the
+ * since-deprecated `--no-highlight`.
+ */
+function noHighlightFlag(): Promise<string> {
+  noHighlight ??= new Deno.Command("pandoc", { args: ["--help"], stdout: "piped", stderr: "null" })
+    .output()
+    .then(({ stdout }) =>
+      new TextDecoder().decode(stdout).includes("--syntax-highlighting")
+        ? "--syntax-highlighting=none"
+        : "--no-highlight"
+    );
+  return noHighlight;
+}
+
 /**
  * Collects block fragments and converts all of them to HTML with a single
  * pandoc call, separating them with raw HTML comment markers.
@@ -106,7 +124,7 @@ class HtmlBatch {
     });
     const doc = { "pandoc-api-version": this.apiVersion, meta: {}, blocks };
     const html = await pandoc(
-      ["--from=json", "--to=html", "--syntax-highlighting=none"],
+      ["--from=json", "--to=html", await noHighlightFlag()],
       JSON.stringify(doc),
     );
     const parts = html.split(/<!--mdo:fragment:\d+-->/);

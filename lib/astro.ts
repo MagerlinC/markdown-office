@@ -17,7 +17,8 @@ export function readSlidesTemplate(path: string): Promise<string> {
   return Deno.readTextFile(new URL(path, TEMPLATE_ROOT));
 }
 
-function cacheDir(): string {
+/** mdo's cache directory (Astro runtime, downloaded browser). */
+export function cacheDir(): string {
   if (Deno.build.os === "windows") {
     return join(Deno.env.get("LOCALAPPDATA") ?? join(Deno.env.get("USERPROFILE") ?? "", "AppData", "Local"), "mdo");
   }

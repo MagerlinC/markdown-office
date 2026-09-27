@@ -429,12 +429,15 @@ section.slide.cover .content .raw-html { color: var(--on-dark); }
   pointer-events: none;
 }
 
-/* ---------- print (Ctrl+P → one slide per page, all steps shown) ---------- */
+/* ---------- print (Ctrl+P / mdo slides --pdf) ----------
+   One slide per 16:9 page, showing each slide's final state: every reveal
+   step visible, and reveal-dismiss blocks gone (they collapse by the end). */
 @media print {
-  @page { size: landscape; margin: 0; }
+  @page { size: 13.333in 7.5in; margin: 0; }
   html { scroll-snap-type: none; height: auto; }
   body { background: none; height: auto; }
   section.slide { break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .reveal > * { opacity: 1; transform: none; }
+  .reveal.reveal-dismiss { display: none !important; }
   .reveal-counter { display: none; }
 }

@@ -1,6 +1,7 @@
 import { resolve } from "jsr:@std/path";
 import { prepareSlidesProject, renderSlides } from "../lib/render-slides.ts";
 import { astroDev, ensureAstroRuntime } from "../lib/astro.ts";
+import { printToPdf } from "../lib/browser.ts";
 
 /** Open a file with the system default application. */
 async function openFile(path: string): Promise<void> {
@@ -16,6 +17,8 @@ export interface SlidesArgs {
   output?: string;
   watch: boolean;
   open: boolean;
+  /** Also print the deck to a PDF next to the HTML output */
+  pdf: boolean;
   rootDir: string;
 }
 
@@ -34,8 +37,16 @@ export async function slidesCommand(args: SlidesArgs): Promise<void> {
       `Generated: ${result.outputPath} (from ${result.sourceCount} source file(s))`,
     );
 
+    let openPath = result.outputPath;
+    if (args.pdf) {
+      const pdfPath = result.outputPath.replace(/\.html?$/i, "") + ".pdf";
+      await printToPdf(result.outputPath, pdfPath);
+      console.log(`Generated: ${pdfPath}`);
+      openPath = pdfPath;
+    }
+
     if (args.open) {
-      await openFile(result.outputPath);
+      await openFile(openPath);
     }
     return;
   }
