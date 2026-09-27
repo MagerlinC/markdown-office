@@ -107,8 +107,10 @@ Within a slide:
 - `. . .` on its own line is a pause: everything after it is revealed on the next step.
 - Lists inside `::: incremental` (or every list, with `incremental: true` in the front matter) reveal one item at a time. `::: nonincremental` opts back out.
 - `::: reveal` reveals each child block of the div in turn.
-- `:::: columns` with `::: column` children lays content out side by side.
+- `:::: columns` with `::: column` children lays content out side by side, top-aligned (`:::: {.columns .center}` centres them vertically).
+- Fenced divs stack their children with the standard gap; add `{.stack-tight}` or `{.stack-loose}` for tighter or looser spacing.
 - `::: notes` holds speaker notes, which are never shown.
+- Raw HTML in a ```` ```{=html} ```` block is passed through untouched, for diagrams, SVGs or custom layouts. The Markdown content styles don't apply inside it, but the design's classes (`.reveal`, `.stack`, `.body`, `.eyebrow`, ...) and theme variables (`var(--brand)`, `var(--ink-2)`, ...) do. Local images in `<img src>` and SVG `<image href>` are embedded like Markdown images. Longer HTML can live in its own file: `!include diagram.html` inserts it as a raw HTML block.
 - `> blockquotes` render as call-outs; code blocks, tables and images are styled to match.
 
 Content before the first `# ` heading is ignored — the title slide is generated automatically from the front matter and branding config, and left out when the document has no `doc-title` or `doc-subtitle`.
@@ -305,6 +307,8 @@ toc: true
 ```
 
 Paths are relative to the including file. Includes are expanded recursively (up to 16 levels deep) before pandoc processes anything, so cross-chapter links work as if everything were in a single file.
+
+`!include` lines inside fenced code blocks are left alone, so you can show them as examples. An included `.html` file is inserted as a raw HTML block, which is handy for keeping slide diagrams out of the Markdown (`!include diagrams/architecture.html`). Image paths inside included files resolve relative to the main document.
 
 ## Template resolution
 

@@ -6,7 +6,18 @@ const INCLUDE_RE = /^\s*!include\s+(.+)$/;
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 
 /**
+ * Wrap HTML in a pandoc raw HTML block (```{=html}), with a fence longer
+ * than any backtick run inside it.
+ */
+function rawHtmlBlock(html: string): string {
+  const longest = Math.max(0, ...(html.match(/`+/g) ?? []).map((m) => m.length));
+  const fence = "`".repeat(Math.max(3, longest + 1));
+  return `${fence}{=html}\n${html.replace(/\n+$/, "")}\n${fence}`;
+}
+
+/**
  * Expand `!include <path>` directives in a markdown file recursively.
+ * `.html` files are included as raw HTML blocks rather than markdown.
  * Returns the fully expanded content as a string, and the set of all
  * files that were included (for watch mode).
  */
@@ -64,6 +75,14 @@ export async function expandIncludes(
       }
 
       includedFiles.push(target);
+
+      if (/\.html?$/i.test(target)) {
+        // HTML files are included verbatim as a raw HTML block
+        result.push(rawHtmlBlock(await Deno.readTextFile(target)));
+        result.push("");
+        continue;
+      }
+
       const nested = await expandIncludes(target, depth + 1);
       result.push(nested.content);
       result.push(""); // keep chapters from running into each other

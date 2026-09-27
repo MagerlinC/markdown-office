@@ -170,14 +170,20 @@ function isPause(b: Block): boolean {
 }
 
 /**
- * Mark lists that should reveal item by item. Pandoc lists carry no
- * attributes, so a raw marker is placed before them and turned into
- * class="reveal" after HTML conversion.
+ * Prepare body blocks for HTML conversion:
+ * - Mark lists that should reveal item by item. Pandoc lists carry no
+ *   attributes, so a raw marker is placed before them and turned into
+ *   class="reveal" after HTML conversion.
+ * - Wrap raw HTML blocks in a .raw-html div.
  */
 function markIncrementalLists(blocks: Block[], incremental: boolean): Block[] {
   const out: Block[] = [];
   for (const b of blocks) {
-    if (b.t === "BulletList" || b.t === "OrderedList") {
+    if (b.t === "RawBlock" && b.c[0] === "html" && !isHtmlComment(b.c[1])) {
+      // Raw HTML (e.g. a ```{=html} diagram) is laid out by its own markup,
+      // not by the markdown content styles — see .raw-html in global.css
+      out.push({ t: "Div", c: [["", ["raw-html"], []], [b]] });
+    } else if (b.t === "BulletList" || b.t === "OrderedList") {
       if (incremental) out.push({ t: "RawBlock", c: ["html", "<!--mdo:reveal-->"] });
       out.push(b);
     } else if (b.t === "Div") {
@@ -193,6 +199,10 @@ function markIncrementalLists(blocks: Block[], incremental: boolean): Block[] {
     }
   }
   return out;
+}
+
+function isHtmlComment(html: string): boolean {
+  return /^\s*<!--[\s\S]*-->\s*$/.test(html);
 }
 
 function applyRevealMarkers(html: string): string {
@@ -222,9 +232,12 @@ async function fileDataUri(path: string): Promise<string> {
   return `data:${mime};base64,${encodeBase64(await Deno.readFile(path))}`;
 }
 
-/** Inline local <img> sources as data URIs so the built HTML is self-contained. */
+/**
+ * Inline local <img src> and SVG <image href> sources as data URIs so the
+ * built HTML is self-contained.
+ */
 async function inlineImages(html: string, searchDirs: string[]): Promise<string> {
-  const re = /(<img\b[^>]*?\ssrc=")([^"]+)(")/g;
+  const re = /(<img\b[^>]*?\ssrc="|<image\b[^>]*?\s(?:xlink:)?href=")([^"]+)(")/g;
   const replacements = new Map<string, string>();
 
   for (const [, , src] of html.matchAll(re)) {

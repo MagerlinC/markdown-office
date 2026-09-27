@@ -56,7 +56,7 @@ export async function slidesCommand(args: SlidesArgs): Promise<void> {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   for await (const event of watcher) {
-    const hasChange = event.paths.some((p) => p.endsWith(".md") || p.endsWith(".css"));
+    const hasChange = event.paths.some((p) => /\.(md|css|html?)$/.test(p));
     if (!hasChange) continue;
 
     if (debounceTimer) clearTimeout(debounceTimer);

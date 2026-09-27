@@ -261,8 +261,9 @@ section.slide.cover {
 .content blockquote, .content table, .content figure,
 .content h3, .content h4, .content h5, .content h6 { margin: 0; }
 .content p { text-wrap: pretty; }
-/* fenced divs (::: incremental, ::: reveal, ...) stack like .stack */
-.content div { display: flex; flex-direction: column; gap: var(--gap-item); }
+/* fenced divs (::: incremental, ::: reveal, ...) stack like .stack.
+   Zero specificity, so utility classes like {.stack-tight} still apply. */
+:where(.content div:not(.raw-html, .raw-html *)) { display: flex; flex-direction: column; gap: var(--gap-item); }
 .content strong { color: var(--ink-2); }
 .content a { color: var(--brand-deep); text-underline-offset: 0.15em; }
 section.slide.dark .content a { color: var(--brand); }
@@ -369,8 +370,30 @@ section.slide.dark .content td { border-bottom-color: color-mix(in srgb, var(--o
 }
 
 /* ::: columns / ::: column fenced divs */
-.content .columns { flex-direction: row; gap: clamp(24px, 3vw, 48px); align-items: center; }
+.content .columns { flex-direction: row; gap: clamp(24px, 3vw, 48px); align-items: flex-start; }
+.content .columns.center { align-items: center; }
 .content .column { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-item); }
+
+/* Raw HTML blocks (```{=html}) keep the plain page context they'd have
+   in a hand-written slide: no markdown typography, sizes or spacing. */
+.content .raw-html {
+  font-size: 1rem;
+  line-height: normal;
+  color: var(--ink);
+}
+section.slide.dark .content .raw-html,
+section.slide.cover .content .raw-html { color: var(--on-dark); }
+.content .raw-html :is(strong, a, h3) { color: inherit; }
+.content .raw-html li::marker { color: inherit; font-weight: inherit; }
+.content .raw-html :is(ul, ol) { display: revert; padding-left: revert; gap: normal; }
+.content .raw-html :is(h3, h4, h5, h6) { font: revert; letter-spacing: normal; text-transform: none; }
+.content .raw-html :is(p, ul, ol, pre, blockquote, table, figure, h3, h4, h5, h6) { margin: revert; }
+.content .raw-html :is(.body, .subtitle, .small, .title, .eyebrow) { margin: 0; }
+.content .raw-html img {
+  max-width: none; max-height: none;
+  object-fit: fill; border-radius: 0; box-shadow: none;
+}
+.content .raw-html :not(pre) > code { background: none; padding: 0; border-radius: 0; }
 
 /* ::: notes fenced divs are speaker notes — never shown on the slide */
 .content .notes { display: none; }
