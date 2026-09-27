@@ -43,7 +43,7 @@ deno task compile
 
 ```bash
 mdo pdf <file-or-dir> [options]       # convert markdown to PDF
-mdo slides <file-or-dir> [options]    # convert markdown to HTML slides
+mdo slides <file-or-dir> [options]    # convert markdown to an HTML slide deck (Astro)
 mdo init [--global]                   # scaffold config and sample files
 mdo update                            # update to the latest version
 mdo --version                         # print version
@@ -76,74 +76,167 @@ mdo update                            # update to the latest release
 
 ## Slides
 
-`mdo slides` converts Markdown into a self-contained HTML slide deck with branding, keyboard/touch navigation, and a progress bar.
+`mdo slides` turns Markdown into an [Astro](https://astro.build) slide deck and builds it into a single, self-contained HTML file (styles, scripts, logo and images inlined). Slides are full-screen, scroll-snapped sections with step-through reveals, a reveal counter, and your branding in the header and footer.
+
+Slides need **Node.js (>= 18.17) and npm** in addition to pandoc. On first use, `mdo` installs Astro once into `~/.cache/mdo/astro/` (or `$XDG_CACHE_HOME/mdo/astro/`); each deck gets a generated Astro project there, under `decks/`.
 
 ### Slide options
 
 | Flag | Description |
 |---|---|
-| `--watch`, `-w` | Re-render on file changes and open the presentation |
+| `--watch`, `-w` | Serve the deck with the Astro dev server, open it, and live-reload on changes |
 | `--open` | Open the presentation after rendering |
 | `--output`, `-o` | Output HTML path (default: `<input>.html`) |
 | `--root` | Document root for mdo-config.json and logo (default: cwd) |
 
 ### Slide structure
 
-Slides are split at these boundaries in the converted HTML:
+Slides are split at these boundaries:
 
 - **`# Heading 1`** — starts a new section slide
-- **`## Heading 2`** — starts a sub-slide (the parent `# ` heading is shown as a section label)
-- **`---`** (horizontal rule) — explicit slide break within a section
+- **`## Heading 2`** — starts a sub-slide (the parent `# ` heading is shown as the eyebrow above the title)
+- **`---`** (horizontal rule) — continuation slide within the current slide
 
-Content before the first `# ` heading is ignored — the title slide is generated automatically from the front matter and branding config.
+If a document has no `# ` headings (say, a README whose title is raw HTML), its highest heading level takes the place of `# `, and the next level down makes sub-slides.
+
+Within a slide:
+
+- A short paragraph (up to 140 characters) **directly after the heading** becomes the subtitle, followed by a divider rule and the rest of the content.
+- `*emphasis*` in a heading is rendered in the brand colour, e.g. `# Who *are we?*`.
+- A heading with nothing below it but a subtitle (e.g. `# Questions*?*`) is centred.
+- `. . .` on its own line is a pause: everything after it is revealed on the next step.
+- Lists inside `::: incremental` (or every list, with `incremental: true` in the front matter) reveal one item at a time. `::: nonincremental` opts back out.
+- `::: reveal` reveals each child block of the div in turn.
+- `:::: columns` with `::: column` children lays content out side by side.
+- `::: notes` holds speaker notes, which are never shown.
+- `> blockquotes` render as call-outs; code blocks, tables and images are styled to match.
+
+Content before the first `# ` heading is ignored — the title slide is generated automatically from the front matter and branding config, and left out when the document has no `doc-title` or `doc-subtitle`.
+
+### Slide attributes
+
+Pandoc attributes on a `#`/`##` heading control that slide. `##` sub-slides and `---` continuations inherit `.dark`/`.cream` from their parent.
+
+| Attribute | Effect |
+|---|---|
+| `{.dark}` | Dark background |
+| `{.cream}` | Cream background (default is off-white paper) |
+| `{.cover}` | Title-slide layout — useful for a closing slide |
+| `{.center}` | Centre the title and content |
+| `{.no-rule}` | No divider between the title and the content |
+| `{.no-subtitle}` | Keep the first paragraph as regular content |
+| `{eyebrow="..."}` | Small label above the title |
+| `{label="..."}` | Text in the top-right corner (default: the `# ` section title) |
+| `{left="..." right="..."}` | Bottom corner text on `.cover` slides |
 
 ```markdown
 ---
-doc-title: "Quarterly Review"
-doc-subtitle: "Q3 2026"
+doc-title: "Self-Hosted AI in *Production*"
+doc-subtitle: "An afternoon with PineGrove AI"
+cover-label: "Workshop"
+cover-left: "90 min"
+cover-right: "example.com"
 ---
 
-# Agenda
-- Revenue
-- Roadmap
-- Hiring
+# Welcome and *thanks for joining!* {.cream label="Welcome"}
 
-# Revenue
+Here's what we've got for you today
 
-## Revenue — EMEA
-Regional breakdown here.
+::: incremental
+- **Part 1**: Introduction and background
+- **Part 2**: Live building session
+:::
+
+. . .
+
+Please ask questions throughout!
+
+# Getting to know *you* {.dark}
+
+## The AI *stack* {eyebrow="The moving parts"}
+
+A paragraph, a list, a table...
 
 ---
-Follow-up notes on the same section.
 
-# Roadmap
-Upcoming milestones.
+Continued on the next slide.
+
+# Questions*?* {.dark label="Q&A"}
+
+About anything we covered today.
+
+# Thanks for joining. {.cover label="Closing" left="contact@example.com"}
 ```
+
+The title slide takes these front matter fields in addition to `doc-title` and `doc-subtitle`:
+
+| Field | Description |
+|---|---|
+| `cover-label` | Top-right text on the title slide |
+| `cover-left` / `cover-right` | Bottom corner text on the title slide |
+| `incremental` | `true` to reveal every list item by item |
 
 ### Slide navigation
 
 | Input | Action |
 |---|---|
-| Right / Down / Space | Next slide |
-| Left / Up | Previous slide |
-| Home / End | First / last slide |
-| Click left half | Previous slide |
-| Click right half | Next slide |
-| Swipe left / right | Next / previous slide (touch) |
-| Ctrl+P | Print all slides |
+| Right / Down / Space / Click | Reveal the next step, then go to the next slide |
+| Left / Up | Hide the last revealed step, then go to the previous slide |
+| Scroll | Move between slides |
+| `?noReveal=true` in the URL | Show every step at once |
+| Ctrl+P | Print one slide per page, with all steps shown |
 
 ### Slide examples
 
 ```bash
 mdo slides deck.md --open                     # render and open
-mdo slides deck.md --watch                    # live-reload while editing
+mdo slides deck.md --watch                    # live-reload dev server while editing
 mdo slides presentations/                     # merge a directory of .md files
 mdo slides deck.md --output build/slides.html
 ```
 
-### Slide template override
+### Slide styling
 
-Place a custom `slides.html` in your document root to override the built-in template. It supports the same `%%PLACEHOLDER%%` tokens as the PDF frontpage template, plus `%%SLIDES_HTML%%` for the generated slide content and `%%LOGO_HTML%%` for the logo `<img>` element.
+By default slides use the brand colour from `mdo-config.json` for accents, together with the company name and logo, on a neutral green-tinted palette. Every other colour, and the fonts, can be set with an optional `slides_theme` object:
+
+```json
+{
+  "brand_color": "#1D4ED8",
+  "slides_theme": {
+    "background_dark": "#0F172A",
+    "background_cover": "linear-gradient(135deg, #1E3A8A, #0F172A)",
+    "text_on_dark": "#E0F2FE",
+    "accent": "#60A5FA",
+    "font": "Space Grotesk",
+    "mono_font": "IBM Plex Mono"
+  }
+}
+```
+
+| Key | Used for | Default |
+|---|---|---|
+| `background` | Default slides | `#FBFAF7` |
+| `background_cream` | `{.cream}` slides, code blocks | `#F6F2ED` |
+| `background_dark` | `{.dark}` slides | `#2B413A` |
+| `background_cover` | Title slide and `{.cover}` slides | same as `background_dark` |
+| `backdrop` | Page behind the slides | `#0D0F0E` |
+| `text` | Titles | `#1A2622` |
+| `text_secondary` | Subtitles, bold text | `#2B413A` |
+| `text_muted` | Body text, header and footer | `#4D6459` |
+| `text_on_dark` | Text on dark and cover slides (faded variants are derived from it) | `#F6F2ED` |
+| `accent_deep` | Accent on light slides (highlighted title words, bullets, links) | `brand_color` |
+| `accent` | Accent on dark slides and in the wordmark | a lighter shade of `accent_deep` |
+| `callout` | Blockquote border | `#7A512E` |
+| `line` | Table rows, code block borders | `#E4DFD5` |
+| `rule` | Divider under slide titles | `#C9C3B6` |
+| `font` | All text except the monospace labels | `Inter` |
+| `mono_font` | Header, footer, eyebrows, code and table headings | `JetBrains Mono` |
+
+Backgrounds accept any CSS background value, so gradients work too.
+
+`font` and `mono_font` take a [Google Fonts](https://fonts.google.com) family name (`"Lora"`), which is loaded automatically when the deck is opened, or a full CSS font stack (`"Lora, Georgia, serif"`), whose first font is loaded from Google Fonts. A font that isn't on Google Fonts gets a warning at build time and only shows on machines where it's installed. Like the defaults, fonts are loaded online and aren't embedded in the HTML. Unknown keys are rejected with a list of valid ones. Keys starting with `--` set a raw CSS custom property, which is handy together with `slides.css`.
+
+For anything beyond that, place a `slides.css` in the document root. It is loaded after the built-in styles.
 
 ## Configuration
 

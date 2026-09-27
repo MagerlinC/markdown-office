@@ -1,5 +1,6 @@
 import { resolve } from "jsr:@std/path";
-import { renderSlides } from "../lib/render-slides.ts";
+import { prepareSlidesProject, renderSlides } from "../lib/render-slides.ts";
+import { astroDev, ensureAstroRuntime } from "../lib/astro.ts";
 
 /** Open a file with the system default application. */
 async function openFile(path: string): Promise<void> {
@@ -19,47 +20,50 @@ export interface SlidesArgs {
 }
 
 export async function slidesCommand(args: SlidesArgs): Promise<void> {
-  // ── One-shot render ─────────────────────────────────────────────────
-  const result = await renderSlides({
+  const renderOpts = {
     input: args.input,
     output: args.output,
     rootDir: args.rootDir,
-  });
+  };
 
-  console.log(
-    `Generated: ${result.outputPath} (from ${result.sourceCount} source file(s))`,
-  );
+  if (!args.watch) {
+    // ── One-shot render ───────────────────────────────────────────────
+    const result = await renderSlides(renderOpts);
 
-  if (args.open || args.watch) {
-    await openFile(result.outputPath);
+    console.log(
+      `Generated: ${result.outputPath} (from ${result.sourceCount} source file(s))`,
+    );
+
+    if (args.open) {
+      await openFile(result.outputPath);
+    }
+    return;
   }
 
-  if (!args.watch) return;
+  // ── Watch mode: Astro dev server with live reload ───────────────────
+  await ensureAstroRuntime();
+  const project = await prepareSlidesProject(renderOpts, "dev");
+  console.log(`Astro project: ${project.projectDir}`);
 
-  // ── Watch mode ──────────────────────────────────────────────────────
+  const server = astroDev(project.projectDir, project.assetDir, true);
+  server.status.then(({ code }) => Deno.exit(code));
+
   console.log("Watching for changes... (Ctrl+C to stop)");
 
-  const watchPaths = [...new Set(result.watchFiles)];
+  const watchPaths = [...new Set(project.watchFiles)];
   const watcher = Deno.watchFs(watchPaths);
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   for await (const event of watcher) {
-    const hasMdChange = event.paths.some((p) => p.endsWith(".md"));
-    if (!hasMdChange) continue;
+    const hasChange = event.paths.some((p) => p.endsWith(".md") || p.endsWith(".css"));
+    if (!hasChange) continue;
 
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-      console.log(`\nChange detected, rebuilding...`);
+      console.log(`\nChange detected, regenerating slides...`);
       try {
-        const r = await renderSlides({
-          input: args.input,
-          output: args.output,
-          rootDir: args.rootDir,
-        });
-        console.log(
-          `Generated: ${r.outputPath} (from ${r.sourceCount} source file(s))`,
-        );
+        await prepareSlidesProject(renderOpts, "dev");
       } catch (e) {
         console.error(`Build failed: ${(e as Error).message}`);
       }

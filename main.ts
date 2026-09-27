@@ -10,14 +10,15 @@ function printUsage(): void {
 
 Usage:
   mdo pdf <file-or-dir> [options]    Convert markdown to PDF
-  mdo slides <file-or-dir> [options] Convert markdown to HTML slides
+  mdo slides <file-or-dir> [options] Convert markdown to an HTML slide deck (Astro)
   mdo init [--global]                Create mdo-config.json and sample files
   mdo update                         Update to the latest version
 
 Options (pdf & slides):
-  --watch, -w      Re-render on file changes and open PDF
-  --open           Open PDF after rendering
-  --output, -o     Output PDF path (default: <input>.pdf)
+  --watch, -w      Re-render on file changes and open the output
+                   (slides: live-reloading Astro dev server)
+  --open           Open the output after rendering
+  --output, -o     Output path (default: <input>.pdf / <input>.html)
   --root           Document root for mdo-config.json and logo (default: cwd)
 
 Global options:

@@ -2,6 +2,13 @@ export interface DocMeta {
   title: string;
   subtitle: string;
   toc: boolean;
+  /** Slides: label in the cover slide's header */
+  coverLabel: string;
+  /** Slides: bottom-left / bottom-right text on the cover slide */
+  coverLeft: string;
+  coverRight: string;
+  /** Slides: reveal list items one at a time by default */
+  incremental: boolean;
 }
 
 /**
@@ -11,7 +18,15 @@ export interface DocMeta {
 export function extractFrontmatter(content: string): DocMeta {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) {
-    return { title: "", subtitle: "", toc: false };
+    return {
+      title: "",
+      subtitle: "",
+      toc: false,
+      coverLabel: "",
+      coverLeft: "",
+      coverRight: "",
+      incremental: false,
+    };
   }
 
   const yaml = match[1];
@@ -34,5 +49,9 @@ export function extractFrontmatter(content: string): DocMeta {
     title: getValue("doc-title"),
     subtitle: getValue("doc-subtitle"),
     toc: getValue("toc") === "true",
+    coverLabel: getValue("cover-label"),
+    coverLeft: getValue("cover-left"),
+    coverRight: getValue("cover-right"),
+    incremental: getValue("incremental") === "true",
   };
 }

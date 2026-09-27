@@ -1,0 +1,20 @@
+---
+import brand from "../brand.json";
+
+interface Props {
+  variant?: "dark" | "light";
+}
+const { variant = "dark" } = Astro.props;
+---
+
+<div class:list={["brand", variant]}>
+  {brand.logo && <span class="brand-logo" aria-hidden="true"></span>}
+  <span><span class="prefix">{brand.prefix}</span><span class="highlight">{brand.highlight}</span></span>
+</div>
+
+<style>
+  .brand.dark .prefix  { color: var(--ink-2); }
+  .brand.dark .highlight { color: var(--brand); }
+  .brand.light .prefix  { color: var(--on-dark); }
+  .brand.light .highlight { color: var(--brand); }
+</style>

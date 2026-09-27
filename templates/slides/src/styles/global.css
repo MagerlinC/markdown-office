@@ -1,0 +1,417 @@
+
+:root {
+  /* Theme tokens. Every colour in the deck comes from these; any of them can
+     be overridden via "slides_theme" in mdo-config.json (see theme.css). */
+
+  /* backgrounds — any CSS background value works (colours, gradients) */
+  --bg: #FBFAF7;              /* default slides */
+  --bg-cream: #F6F2ED;        /* {.cream} slides */
+  --bg-dark: #2B413A;         /* {.dark} slides */
+  --bg-cover: var(--bg-dark); /* title slide and {.cover} slides */
+  --backdrop: #0d0f0e;        /* page behind the slides */
+
+  /* text */
+  --ink: #1A2622;             /* titles */
+  --ink-2: #2B413A;           /* subtitles, emphasis */
+  --ink-3: #4D6459;           /* body text, chrome */
+  --on-dark: #F6F2ED;         /* text on dark and cover slides */
+
+  /* accents. --brand-deep is set from brand_color in mdo-config.json;
+     the bright accent and soft tint are derived from it. */
+  --brand-deep: #257E34;      /* accent on light slides */
+  --brand: oklch(from var(--brand-deep) calc(l + 0.14) c h); /* accent on dark slides */
+  --brand-soft: color-mix(in oklab, var(--brand) 20%, white);
+  --callout: #7A512E;         /* blockquote border */
+  --line: #E4DFD5;            /* table rows, code borders */
+  --line-strong: #C9C3B6;     /* divider rule */
+
+  /* fonts (loaded in index.astro) */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --pad-x: clamp(32px, 7vw, 120px);
+  --pad-y: clamp(56px, 8vh, 96px);
+  --gap-title: clamp(28px, 4vh, 56px);
+  --gap-item: clamp(16px, 2vh, 28px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overflow-y: scroll;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--backdrop);
+}
+
+.brand-word {
+  color: var(--brand-deep);
+}
+
+/* ---------- slide base ---------- */
+section.slide {
+  background: var(--bg);
+  color: var(--ink);
+  height: 100svh;
+  scroll-snap-align: start;
+  box-sizing: border-box;
+  padding: var(--pad-y) var(--pad-x);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* paper-texture overlay — light slides only
+   A tiny canvas-generated noise tile (set as --paper-grain by JS)
+   is tiled across the slide.  mix-blend-mode: multiply makes white
+   pixels transparent so only the speckle shows through. */
+section.slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--paper-grain, none);
+  opacity: 0.06;
+}
+
+/* make sure all slide content sits above the texture */
+section.slide > * { position: relative; z-index: 1; }
+
+/* disable the texture on dark/green slides */
+section.slide.dark::before,
+section.slide.cover::before { display: none; }
+
+section.slide.dark { background: var(--bg-dark); color: var(--on-dark); }
+section.slide.dark .eyebrow { color: color-mix(in srgb, var(--on-dark) 55%, transparent); }
+section.slide.dark .rule { background: color-mix(in srgb, var(--on-dark) 18%, transparent); }
+section.slide.dark .subtitle { color: color-mix(in srgb, var(--on-dark) 70%, transparent); }
+section.slide.dark .body,
+section.slide.dark .content { color: color-mix(in srgb, var(--on-dark) 60%, transparent); }
+section.slide.dark strong { color: var(--on-dark); }
+section.slide.dark .brand-word,
+section.slide.cover .brand-word { color: var(--brand); }
+section.slide.cream { background: var(--bg-cream); }
+
+/* ---------- shared elements ---------- */
+.eyebrow {
+  font-size: clamp(11px, 1.2vw, 20px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  margin: 0;
+}
+.title {
+  font-size: clamp(28px, 3.8vw, 64px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+  margin: 0;
+  text-wrap: balance;
+}
+.subtitle {
+  font-size: clamp(18px, 2.2vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  color: var(--ink-2);
+  margin: 0;
+  text-wrap: pretty;
+}
+.body {
+  font-size: clamp(14px, 1.4vw, 24px);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink-3);
+  margin: 0;
+  text-wrap: pretty;
+}
+.small {
+  font-size: clamp(12px, 1.1vw, 20px);
+  line-height: 1.4;
+  color: var(--ink-3);
+  margin: 0;
+}
+.rule {
+  height: 1px;
+  background: var(--line-strong);
+  width: 100%;
+}
+
+/* ---------- brand logo ---------- */
+/* The logo is embedded once as a CSS variable (see theme.css) rather than
+   repeated as an <img> data URI on every slide. */
+.brand-logo {
+  display: inline-block;
+  flex-shrink: 0;
+  aspect-ratio: var(--brand-logo-ratio, 1);
+  background: var(--brand-logo, none) center / contain no-repeat;
+}
+
+/* ---------- deck chrome ---------- */
+.deck-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.1vw, 18px);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+section.slide.dark .deck-header { color: color-mix(in srgb, var(--on-dark) 50%, transparent); }
+.deck-header .brand { display: flex; align-items: center; gap: clamp(8px, 0.8vw, 14px); font-weight: 600; }
+.deck-header .brand .brand-logo { height: clamp(18px, 1.8vw, 32px); }
+
+.deck-footer {
+  margin-top: auto;
+  padding-top: clamp(12px, 2vh, 24px);
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1vw, 16px);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3); opacity: 0.55;
+}
+section.slide.dark .deck-footer { color: color-mix(in srgb, var(--on-dark) 50%, transparent); }
+
+.reveal-counter {
+  transition: opacity 0.3s ease;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- cover ---------- */
+section.slide.cover {
+  background: var(--bg-cover); color: var(--on-dark);
+  justify-content: space-between;
+}
+.cover .logo-mark { height: clamp(24px, 3vw, 48px); vertical-align: middle; margin-left: clamp(4px, 0.5vw, 8px); }
+.cover .cover-byline {
+  display: inline-flex; align-items: center; justify-content: center;
+  color: color-mix(in srgb, var(--on-dark) 60%, transparent);
+  margin-top: clamp(8px, 1vh, 16px);
+}
+.cover .cover-body { display: flex; flex-direction: column; gap: clamp(20px, 3vh, 40px); flex: 1; justify-content: center; }
+.cover .cover-cols { display: flex; align-items: center; gap: clamp(40px, 6vw, 120px); }
+.cover .cover-text { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: clamp(20px, 3vh, 40px); }
+.cover .wordmark {
+  font-size: clamp(40px, 6vw, 96px); font-weight: 700;
+  letter-spacing: -0.04em; line-height: 1;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.cover .wordmark .pine { color: var(--on-dark); }
+.cover .wordmark .grove { color: var(--brand); }
+.cover .tagline {
+  font-size: clamp(32px, 5vw, 80px); font-weight: 600;
+  letter-spacing: -0.03em; line-height: 1.1;
+  color: var(--on-dark); text-wrap: balance;
+  margin: 0;
+}
+.cover .tagline em { font-style: normal; color: var(--brand); font-weight: 600; }
+.cover .meta {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  color: color-mix(in srgb, var(--on-dark) 60%, transparent);
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1vw, 16px); letter-spacing: 0.18em; text-transform: uppercase;
+}
+.cover .meta .right { text-align: right; }
+
+/* subtitle + body on cover-style slides (e.g. a closing slide) */
+.cover .cover-subtitle { color: color-mix(in srgb, var(--on-dark) 50%, transparent); margin-top: clamp(12px, 2vh, 24px); }
+.cover .cover-subtitle em { font-style: normal; color: var(--brand); }
+.cover .cover-content { align-items: center; }
+.cover .cover-content p {
+  font-size: clamp(18px, 2.2vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  color: color-mix(in srgb, var(--on-dark) 50%, transparent);
+  margin: clamp(12px, 2vh, 24px) 0 0;
+  text-wrap: pretty;
+}
+.cover .cover-content em { font-style: normal; color: var(--brand); }
+
+/* ---------- layout utilities ---------- */
+.stack { display: flex; flex-direction: column; gap: var(--gap-item); }
+.stack-tight { display: flex; flex-direction: column; gap: clamp(8px, 1vh, 16px); }
+.stack-loose { display: flex; flex-direction: column; gap: clamp(20px, 3.5vh, 48px); }
+.row { display: flex; gap: clamp(32px, 5vw, 80px); align-items: flex-start; }
+.grow { flex: 1 1 0; min-width: 0; }
+.center-y { display: flex; flex-direction: column; justify-content: flex-start; flex: 1; padding-top: clamp(24px, 6vh, 80px); }
+.centered { align-items: center; text-align: center; margin-top: 20vh; }
+
+/* ---------- markdown content ---------- */
+/* Everything below the title block on a generated slide lives in .content.
+   These rules give plain pandoc HTML the same typography as the
+   hand-written .body / .subtitle / .eyebrow elements above. */
+.content {
+  font-size: clamp(14px, 1.4vw, 24px);
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.content p, .content ul, .content ol, .content pre,
+.content blockquote, .content table, .content figure,
+.content h3, .content h4, .content h5, .content h6 { margin: 0; }
+.content p { text-wrap: pretty; }
+/* fenced divs (::: incremental, ::: reveal, ...) stack like .stack */
+.content div { display: flex; flex-direction: column; gap: var(--gap-item); }
+.content strong { color: var(--ink-2); }
+.content a { color: var(--brand-deep); text-underline-offset: 0.15em; }
+section.slide.dark .content a { color: var(--brand); }
+.title a, .subtitle a, .tagline a { color: inherit; text-underline-offset: 0.12em; }
+.content kbd, .cover-content kbd {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.content h3 {
+  font-size: clamp(18px, 2.2vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  color: var(--ink);
+  text-wrap: balance;
+}
+section.slide.dark .content h3 { color: var(--on-dark); }
+.content h4, .content h5, .content h6 {
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 1.2vw, 20px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.content ul, .content ol {
+  display: flex; flex-direction: column; gap: clamp(8px, 1.2vh, 18px);
+  padding-left: 1.4em;
+}
+.content li::marker { color: var(--brand-deep); font-weight: 700; }
+section.slide.dark .content li::marker { color: var(--brand); }
+.content li > ul, .content li > ol { margin-top: clamp(6px, 0.8vh, 12px); font-size: 0.9em; }
+
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.content :not(pre) > code {
+  background: color-mix(in srgb, var(--ink-2) 7%, transparent);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+section.slide.dark .content :not(pre) > code { background: color-mix(in srgb, var(--on-dark) 8%, transparent); }
+.content pre {
+  font-size: clamp(11px, 1.05vw, 18px);
+  line-height: 1.5;
+  background: var(--bg-cream);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: clamp(12px, 1.6vh, 24px) clamp(14px, 1.4vw, 28px);
+  overflow: auto;
+  color: var(--ink-2);
+}
+section.slide.cream .content pre { background: var(--bg); }
+section.slide.dark .content pre {
+  background: color-mix(in srgb, var(--on-dark) 4%, transparent);
+  border-color: color-mix(in srgb, var(--on-dark) 12%, transparent);
+  color: var(--on-dark);
+}
+.content pre code { font-size: inherit; }
+
+.content blockquote {
+  border-left: 3px solid var(--callout);
+  padding-left: clamp(12px, 1.5vw, 24px);
+  margin-top: clamp(12px, 2vh, 28px);
+}
+section.slide.dark .content blockquote { border-left-color: var(--brand); }
+
+.content table {
+  border-collapse: collapse;
+  font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+}
+.content th {
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-align: left;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line-strong);
+}
+.content th, .content td { padding: 0.45em 1.2em 0.45em 0; }
+.content td { border-bottom: 1px solid var(--line); }
+section.slide.dark .content th { color: color-mix(in srgb, var(--on-dark) 55%, transparent); border-bottom-color: color-mix(in srgb, var(--on-dark) 18%, transparent); }
+section.slide.dark .content td { border-bottom-color: color-mix(in srgb, var(--on-dark) 10%, transparent); }
+
+.content img {
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+.content figure { display: flex; flex-direction: column; gap: clamp(6px, 1vh, 12px); }
+.content figcaption {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1vw, 16px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* ::: columns / ::: column fenced divs */
+.content .columns { flex-direction: row; gap: clamp(24px, 3vw, 48px); align-items: center; }
+.content .column { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-item); }
+
+/* ::: notes fenced divs are speaker notes — never shown on the slide */
+.content .notes { display: none; }
+
+/* ---------- reveal (step-through bullets) ---------- */
+/* Add class="reveal" to any container. Its direct children
+   start hidden and appear one at a time on click / →  / ↓ / Space.
+   Pressing ← / ↑ hides the last revealed child. */
+.reveal > * {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.reveal > .visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* reveal-dismiss: after all children are revealed, next click
+   collapses the entire container so following content can use the space. */
+.reveal.reveal-dismiss {
+  transition: opacity 0.35s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease, gap 0.4s ease;
+  overflow: hidden;
+}
+.reveal.reveal-dismiss.dismissed {
+  opacity: 0;
+  max-height: 0 !important;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  pointer-events: none;
+}
+
+/* ---------- print (Ctrl+P → one slide per page, all steps shown) ---------- */
+@media print {
+  @page { size: landscape; margin: 0; }
+  html { scroll-snap-type: none; height: auto; }
+  body { background: none; height: auto; }
+  section.slide { break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .reveal > * { opacity: 1; transform: none; }
+  .reveal-counter { display: none; }
+}

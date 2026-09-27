@@ -3,3 +3,6 @@ mdo
 
 # Deno cache (if using DENO_DIR locally)
 .deno/
+
+# Smoke test output
+test/out/

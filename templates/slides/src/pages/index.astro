@@ -1,0 +1,202 @@
+---
+import "../styles/global.css";
+import "../styles/theme.css";
+import "../styles/custom.css";
+import brand from "../brand.json";
+import deck from "../deck.json";
+import Slides from "../../content/%%DECK%%/slides.astro";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{[brand.name, deck.title].filter(Boolean).join(" · ")}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {deck.fonts && (
+      <>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href={deck.fonts} rel="stylesheet" />
+      </>
+    )}
+  </head>
+  <body>
+    <Slides />
+    <script>
+      // Reveal: step through children of .reveal containers one at a time.
+      // → / ↓ / Space / Click = show next, ← / ↑ = hide last.
+      // When all children are revealed, the next forward action scrolls
+      // to the next slide as normal.
+      document.addEventListener("DOMContentLoaded", () => {
+        const noReveal = new URLSearchParams(window.location.search).get("noReveal") === "true";
+
+        // ?noReveal=true → show everything immediately
+        if (noReveal) {
+          document.querySelectorAll(".reveal > *").forEach((el) => el.classList.add("visible"));
+        }
+
+        // --- slide navigation (always active) ---
+
+        function currentSlide() {
+          const scrollY = window.scrollY;
+          const slides = document.querySelectorAll("section.slide");
+          for (let i = slides.length - 1; i >= 0; i--) {
+            if ((slides[i] as HTMLElement).offsetTop <= scrollY + window.innerHeight / 2)
+              return slides[i];
+          }
+          return slides[0];
+        }
+
+        function currentSlideIndex() {
+          const slides = Array.from(document.querySelectorAll("section.slide"));
+          const scrollY = window.scrollY;
+          for (let i = slides.length - 1; i >= 0; i--) {
+            if ((slides[i] as HTMLElement).offsetTop <= scrollY + window.innerHeight / 2)
+              return i;
+          }
+          return 0;
+        }
+
+        function goToSlide(index: number) {
+          const slides = document.querySelectorAll("section.slide");
+          if (index >= 0 && index < slides.length) {
+            slides[index].scrollIntoView({ behavior: "smooth" });
+          }
+        }
+
+        // --- reveal step-through ---
+
+        function activeReveals() {
+          const slide = currentSlide();
+          if (!slide) return [];
+          return Array.from(slide.querySelectorAll(".reveal"));
+        }
+
+        function revealNext() {
+          if (noReveal) return false;
+          for (const container of activeReveals()) {
+            if (container.classList.contains("dismissed")) continue;
+            const children = Array.from(container.children);
+            const next = children.find((c) => !c.classList.contains("visible"));
+            if (next) {
+              next.classList.add("visible");
+              return true; // consumed
+            }
+            // all children visible — if dismiss-able, collapse it
+            if (container.classList.contains("reveal-dismiss")) {
+              container.classList.add("dismissed");
+              container.addEventListener("transitionend", () => {
+                if (container.classList.contains("dismissed")) {
+                  container.style.display = "none";
+                }
+              }, { once: true });
+              return true; // consumed
+            }
+          }
+          return false; // all revealed, let slide nav happen
+        }
+
+        function revealPrev() {
+          if (noReveal) return false;
+          const containers = activeReveals();
+          for (let i = containers.length - 1; i >= 0; i--) {
+            const container = containers[i];
+            // undo a dismiss first
+            if (container.classList.contains("dismissed")) {
+              container.style.display = "";
+              // force reflow so the browser sees display change before removing dismissed
+              container.offsetHeight;
+              container.classList.remove("dismissed");
+              return true;
+            }
+            const children = Array.from(container.children);
+            const lastVisible = children
+              .filter((c) => c.classList.contains("visible"))
+              .pop();
+            if (lastVisible) {
+              lastVisible.classList.remove("visible");
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // --- reveal counter indicator ---
+
+        function updateRevealCounter() {
+          const slide = currentSlide();
+          if (!slide) return;
+          const footer = slide.querySelector(".deck-footer");
+          if (!footer) return;
+
+          // Ensure counter element exists in this footer
+          let counter = footer.querySelector(".reveal-counter") as HTMLElement | null;
+          if (!counter) {
+            counter = document.createElement("span");
+            counter.className = "reveal-counter";
+            // Insert as middle child (between brand and slide number)
+            const lastChild = footer.lastElementChild;
+            if (lastChild) {
+              footer.insertBefore(counter, lastChild);
+            } else {
+              footer.appendChild(counter);
+            }
+          }
+
+          // Count total and visible reveal steps on this slide
+          const reveals = Array.from(slide.querySelectorAll(".reveal:not(.dismissed)"));
+          let total = 0;
+          let shown = 0;
+          for (const container of reveals) {
+            const children = Array.from(container.children);
+            total += children.length;
+            shown += children.filter((c) => c.classList.contains("visible")).length;
+          }
+
+          if (total === 0 || noReveal) {
+            counter.style.opacity = "0";
+          } else {
+            counter.textContent = `${shown} / ${total}`;
+            counter.style.opacity = "1";
+          }
+        }
+
+        // Update counter on scroll (slide change)
+        window.addEventListener("scroll", updateRevealCounter, { passive: true });
+        // Initial update
+        updateRevealCounter();
+
+        // --- keyboard & click handlers ---
+
+        document.addEventListener("keydown", (e) => {
+          if (
+            e.key === "ArrowRight" ||
+            e.key === "ArrowDown" ||
+            e.key === " "
+          ) {
+            e.preventDefault();
+            if (!revealNext()) {
+              goToSlide(currentSlideIndex() + 1);
+            }
+            updateRevealCounter();
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            if (!revealPrev()) {
+              goToSlide(currentSlideIndex() - 1);
+            }
+            updateRevealCounter();
+          }
+        });
+
+        document.addEventListener("click", (e) => {
+          // Ignore clicks on links/buttons
+          if ((e.target as HTMLElement).closest("a, button")) return;
+          if (!revealNext()) {
+            goToSlide(currentSlideIndex() + 1);
+          }
+          updateRevealCounter();
+        });
+      });
+    </script>
+  </body>
+</html>

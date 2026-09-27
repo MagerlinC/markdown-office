@@ -44,6 +44,7 @@ jobs:
         run: |
           deno compile -A \
             --target ${{ matrix.target }} \
+            --include templates/slides \
             --output ${{ matrix.artifact }} \
             main.ts
 

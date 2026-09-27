@@ -105,6 +105,12 @@ else
   fi
 fi
 
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  ok "node $(node --version) (for mdo slides)"
+else
+  warn "node/npm not found — only needed for 'mdo slides': https://nodejs.org"
+fi
+
 # ── Download mdo ──────────────────────────────────────────────────────
 
 PLATFORM="$(detect_platform)"

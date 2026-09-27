@@ -1,7 +1,8 @@
 {
   "tasks": {
     "mdo": "deno run -A main.ts",
-    "compile": "deno compile -A --output mdo main.ts"
+    "compile": "deno compile -A --include templates/slides --output mdo main.ts",
+    "test": "bash test/smoke.sh"
   },
   "compilerOptions": {
     "strict": true
