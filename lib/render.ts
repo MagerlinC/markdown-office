@@ -107,7 +107,8 @@ export async function renderPdf(options: RenderOptions): Promise<RenderResult> {
     ];
 
     if (meta.toc) {
-      pandocArgs.push("--toc", "--toc-depth=3");
+      const tocDepth = config.toc_depth ?? 3;
+      pandocArgs.push("--toc", `--toc-depth=${tocDepth}`);
     }
 
     pandocArgs.push("-o", outputPath);

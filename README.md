@@ -277,9 +277,18 @@ mdo init --global
   "company_name_prefix": "Your",
   "company_name_highlight": "Company",
   "brand_color": "#2563EB",
-  "confidentiality_label": "Confidential"
+  "confidentiality_label": "Confidential",
+  "toc_depth": 2
 }
 ```
+
+| Field | Required | Description |
+|---|---|---|
+| `company_name_prefix` | Yes | First part of the company name |
+| `company_name_highlight` | Yes | Second part, rendered in `brand_color` |
+| `brand_color` | Yes | Hex colour for branding accents |
+| `confidentiality_label` | Yes | Label shown on the frontpage |
+| `toc_depth` | No | Max heading depth for the PDF table of contents (1–6, default `3`) |
 
 The company name is rendered as `<prefix><highlight>` with the highlight portion colored using `brand_color`.
 

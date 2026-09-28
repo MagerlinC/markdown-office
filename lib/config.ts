@@ -7,6 +7,8 @@ export interface BrandConfig {
   company_name_highlight: string;
   brand_color: string;
   confidentiality_label: string;
+  /** Max heading depth for the PDF table of contents (1–6, default 3). */
+  toc_depth?: number;
   /** Optional slide colours, keyed by SLIDES_THEME_KEYS or raw "--css-var" names */
   slides_theme?: Record<string, string>;
 }
@@ -57,6 +59,12 @@ function parseAndValidate(text: string, path: string): BrandConfig {
   for (const key of required) {
     if (typeof raw[key] !== "string") {
       throw new Error(`${path}: missing or invalid field "${key}"`);
+    }
+  }
+
+  if (raw.toc_depth !== undefined) {
+    if (!Number.isInteger(raw.toc_depth) || raw.toc_depth < 1 || raw.toc_depth > 6) {
+      throw new Error(`${path}: "toc_depth" must be an integer between 1 and 6`);
     }
   }
 
