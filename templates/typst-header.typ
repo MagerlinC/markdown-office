@@ -3,6 +3,7 @@
 
 // Section heading styles
 #show heading.where(level: 1): it => [
+  #pagebreak(weak: true)
   #v(1.5em)
   #text(14pt, weight: "bold", it)
   #v(0.4em)
