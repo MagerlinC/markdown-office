@@ -2,20 +2,19 @@ import { join } from "jsr:@std/path";
 
 // ── Template directory ────────────────────────────────────────────────
 // Templates live in ../templates/ relative to this file.
-// `import.meta.dirname` works in both `deno run` and `deno compile`
-// (compiled binaries resolve against --include'd assets).
-const TEMPLATES_DIR = join(import.meta.dirname!, "..", "templates");
+// Using import.meta.url (not dirname) so it resolves correctly in both
+// `deno run` and `deno compile` — matching the pattern in astro.ts.
+const TEMPLATES_ROOT = new URL("../templates/", import.meta.url);
 
 /**
- * Read an embedded (bundled) template by name.
+ * Read a bundled template by name.
  * Returns the file content, or undefined if the template doesn't exist.
  */
 async function readBundledTemplate(
   filename: string,
 ): Promise<string | undefined> {
-  const bundledPath = join(TEMPLATES_DIR, filename);
   try {
-    return await Deno.readTextFile(bundledPath);
+    return await Deno.readTextFile(new URL(filename, TEMPLATES_ROOT));
   } catch {
     return undefined;
   }
